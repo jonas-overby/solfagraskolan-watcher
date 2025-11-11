@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os, re, json, time, html
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from urllib.parse import urljoin, urlencode
 import requests
 from bs4 import BeautifulSoup
@@ -13,8 +13,11 @@ QUERY = "Solfagraskolan"
 PAGE_SIZE = 100
 MAX_PAGES = 60
 
-USER_AGENT = "Mozilla/5.0 (compatible; SolfagraskolanWatcher/2.1)"
-HEADERS = {"User-Agent": USER_AGENT, "Accept": "text/html,application/pdf;q=0.9,*/*;q=0.8"}
+USER_AGENT = "Mozilla/5.0 (compatible; SolfagraskolanWatcher/2.2)"
+HEADERS = {
+    "User-Agent": USER_AGENT,
+    "Accept": "text/html,application/pdf;q=0.9,*/*;q=0.8"
+}
 
 # Paths
 DATA_DIR   = "data"
@@ -52,10 +55,10 @@ def looks_like_pdf(url: str) -> bool:
     u = url.lower()
     if u.endswith(".pdf"):
         return True
-    # Fånga udda varianter som slutar med "...pdf" utan punkt, eller har ?-query efter
-    if re.search(r"pdf($|\?|#)", u):
+    # fånga udda varianter som slutar med "...pdf" utan punkt eller har query/fragment efter
+    if re.search(r"pdf($|[?#])", u):
         return True
-    # Fallback: kolla content-type via HEAD (kan vara lite långsammare)
+    # fallback: kolla content-type via HEAD
     try:
         h = requests.head(url, headers=HEADERS, allow_redirects=True, timeout=15)
         ct = (h.headers.get("Content-Type") or "").lower()
@@ -128,7 +131,13 @@ def parse_links(html_text:str, page_url:str):
                 block_text = t
             p = p.parent
 
-        looks_like_agenda = ("/agenda" in href) or ("/namnder-styrelser/" in href) or ("/welcome-" in href)
+        # Kännetecken för ärendesidor i portalen (utökad med /committees/)
+        looks_like_agenda = any(s in href for s in [
+            "/agenda",
+            "/namnder-styrelser/",
+            "/welcome-",
+            "/committees/"
+        ])
 
         # 1) Direkta träffar: länktexten innehåller ordet
         if "solfagraskolan" in title_text:
@@ -294,7 +303,7 @@ footer{max-width:980px;margin:32px auto 48px auto;padding:0 16px;color:#475569;f
         f.write(f"<link rel='stylesheet' href='style.css'>")
         f.write("<header><h1>Nya dokument – Solfagraskolan</h1></header>")
         f.write("<main>")
-        f.write("<div class='notice'>Sidan uppdateras dagligen och visar nyupptäckta dokument där 'Solfagraskolan' förekommer i sökträffen eller i ärendets rubrik. PDF-länkar kan upptäckas även om URL:en inte slutar på .pdf.</div>")
+        f.write("<div class='notice'>Sidan uppdateras dagligen och visar nyupptäckta dokument där 'Solfagraskolan' förekommer i sökträffen eller i ärendets rubrik. PDF-länkar detekteras även om URL:en inte slutar på .pdf.</div>")
 
         for (y,w) in sorted_keys:
             items = groups[(y,w)]
