@@ -1,13 +1,14 @@
-html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;}
+html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:#f8fafc;}
 header{padding:24px 16px;background:#0f172a;color:#fff;}
 header h1{margin:0;font-size:24px;font-weight:700;}
-main{max-width:900px;margin:0 auto;padding:16px;}
+main{max-width:980px;margin:0 auto;padding:16px;}
 .week{margin:24px 0;padding:16px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;}
 .week h2{margin:0 0 12px 0;font-size:18px;}
 .item{padding:10px 0;border-top:1px solid #e2e8f0;}
 .item:first-child{border-top:none;}
 .item a{font-weight:600;text-decoration:none;}
 .item a:hover{text-decoration:underline;}
-.meta{color:#475569;font-size:13px;margin-top:4px;}
-footer{max-width:900px;margin:32px auto 48px auto;padding:0 16px;color:#475569;font-size:13px;}
-.notice{background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:8px;margin:16px 0;}
+.meta{color:#475569;font-size:13px;margin-top:4px}
+.badge{display:inline-block;padding:2px 6px;border-radius:6px;background:#eef2ff;color:#3730a3;font-size:12px;margin-left:6px}
+footer{max-width:980px;margin:32px auto 48px auto;padding:0 16px;color:#475569;font-size:13px;}
+.notice{background:#f1f5f9;border:1px solid #e2e8f0;padding:10px;border-radius:8px;margin:16px 0;}
