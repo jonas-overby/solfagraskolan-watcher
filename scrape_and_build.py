@@ -43,35 +43,134 @@ def fetch_page(page_index:int):
     r.raise_for_status()
     return r.text, url
 
-def parse_links(html_text:str, page_url:str):
-    soup = BeautifulSoup(html_text, "html.parser")
+def extract_attachments_from_agenda(url:str):
+    """
+    Öppnar en ärendesida/punkt och returnerar [(title, url)] för *alla bilagor* på sidan.
+    Heuristik:
+      - länkar som slutar på .pdf
+      - eller länkar som ligger i sektioner som innehåller ord som 'Bilaga', 'Attachments'
+    Vi plockar rubriken (om någon) och annars länktexten.
+    """
     out = []
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=30, allow_redirects=True)
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        def norm(s): return " ".join((s or "").split()).strip()
+
+        # 1) Titta i sektioner som sannolikt rymmer bilagor
+        candidate_sections = []
+        for sec in soup.find_all(True):
+            txt = (sec.get_text(" ", strip=True) or "").lower()
+            if any(k in txt for k in ["bilaga", "bilagor", "attachments", "documents"]):
+                candidate_sections.append(sec)
+
+        # 2) Hitta pdf-länkar i dessa sektioner (fallback: överallt)
+        def collect_links(context):
+            items = []
+            anchors = context.select("a[href]") if hasattr(context, "select") else soup.select("a[href]")
+            for a in anchors:
+                href = a.get("href", "").strip()
+                if not href:
+                    continue
+                # Absolut-ifiera
+                if href.startswith("//"):
+                    href = "https:" + href
+                elif href.startswith("/"):
+                    href = urljoin(url, href)
+                elif not href.startswith("http"):
+                    href = urljoin(url, href)
+
+                # Filtrera på dokument-liknande länkar
+                if href.lower().endswith(".pdf") or "document" in href.lower() or "attachment" in href.lower():
+                    title = norm(a.get_text(" ", strip=True)) or "Bilaga"
+                    items.append((title, href))
+            return items
+
+        items = []
+        if candidate_sections:
+            for sec in candidate_sections:
+                items.extend(collect_links(sec))
+        else:
+            # fallback: sök pdf-länkar var som helst
+            items.extend(collect_links(soup))
+
+        # dedup
+        seen = set()
+        for t,u in items:
+            if u in seen: 
+                continue
+            seen.add(u)
+            out.append((t,u))
+    except Exception:
+        pass
+
+    return out
+
+
+def parse_links(html_text:str, page_url:str):
+    """
+    Returnerar två listor:
+      direct_links: [(title, url)] där själva länktexten innehåller 'Solfagraskolan'
+      agenda_pages: [url] med ärendesidor/punkter där *blockets rubrik/kontext* matchar ordet
+    Heuristik: vi tittar på föräldra-/syskonblockets text när en länk ser ut att vara en 'Punkt'/'Ärende'.
+    """
+    soup = BeautifulSoup(html_text, "html.parser")
+
+    direct_links = []
+    agenda_pages = []
+
+    # Hjälp: normaliserad text
+    def norm(s: str) -> str:
+        return " ".join(s.split()).strip().lower()
+
     for a in soup.select("a[href]"):
-        title = " ".join(a.get_text(" ", strip=True).split())
-        if not title:
+        href = a.get("href", "").strip()
+        if not href:
             continue
-        if "solfagraskolan" not in title.lower():
-            continue
-        href = a.get("href").strip()
+
+        # Absolut URL
         if href.startswith("//"):
             href = "https:" + href
         elif href.startswith("/"):
             href = urljoin(page_url, href)
         elif not href.startswith("http"):
             href = urljoin(page_url, href)
-        # hoppa över pagineringslänkar
+
+        # Filtrera bort pagineringslänkar
         if href.startswith(BASE) and "pindex=" in href and "psize=" in href:
             continue
-        out.append((title, href))
-    # dedup by URL
-    seen = set()
-    uniq = []
-    for t,u in out:
-        if u in seen: 
+
+        title_text = norm(a.get_text(" ", strip=True))
+        block_text = title_text
+
+        # Samla lite kontext runt länken (upp till 2 nivåer upp)
+        p = a.parent
+        for _ in range(2):
+            if not p:
+                break
+            block_text = norm(p.get_text(" ", strip=True)) or block_text
+            p = p.parent
+
+        # 1) Direkta dokumentlänkar: länktexten innehåller ordet
+        if "solfagraskolan" in title_text:
+            direct_links.append((" ".join(a.get_text(" ", strip=True).split()), href))
             continue
-        seen.add(u)
-        uniq.append((t,u))
-    return uniq
+
+        # 2) Ärendesidor/Punkter: blocket innehåller ordet
+        #    (t.ex. "Genomförandebeslut för Solfagraskolan …", där bilagan saknar ordet)
+        #    Heuristik: länken bör peka på portalens HTML-sida (inte direkt .pdf)
+        looks_like_agenda = ("/agenda" in href) or ("/namnder-styrelser/" in href) or ("/welcome-" in href)
+        if "solfagraskolan" in block_text and looks_like_agenda and not href.lower().endswith(".pdf"):
+            agenda_pages.append(href)
+
+    # Rensa dubletter
+    seen = set()
+    direct_links = [(t,u) for (t,u) in direct_links if not (u in seen or seen.add(u))]
+    agenda_pages = [u for u in agenda_pages if not (u in seen or seen.add(u))]
+
+    return direct_links, agenda_pages
 
 def head_last_modified(url:str):
     try:
@@ -91,17 +190,46 @@ def head_last_modified(url:str):
         return None
 
 def collect_all():
-    all_items = []
+    """
+    Hämtar alla sökresultatssidor och returnerar:
+      - alla direkta länkar som matchar 'Solfagraskolan' i länktexten
+      - alla bilagor från ärendesidor där *blocktexten* matchar 'Solfagraskolan'
+    """
+    direct = []
+    agenda_pages = []
+
     for p in range(1, MAX_PAGES+1):
         html_text, url = fetch_page(p)
-        items = parse_links(html_text, url)
-        all_items.extend(items)
-        if p == 1 and len(items) < PAGE_SIZE:
+        d, a = parse_links(html_text, url)
+        direct.extend(d)
+        agenda_pages.extend(a)
+        if p == 1 and len(d) + len(a) < PAGE_SIZE:
             break
-        if len(items) == 0:
+        if (len(d) + len(a)) == 0:
             break
         time.sleep(0.5)
+
+    # Hämta bilagor från alla ärendesidor
+    attachments = []
+    seen_agenda = set()
+    for ap in agenda_pages:
+        if ap in seen_agenda:
+            continue
+        seen_agenda.add(ap)
+        attachments.extend(extract_attachments_from_agenda(ap))
+        time.sleep(0.4)  # vara snäll mot servern
+
+    # Slå ihop och deduplicera
+    all_items = []
+    seen = set()
+    for t,u in (direct + attachments):
+        if u in seen:
+            continue
+        seen.add(u)
+        all_items.append((t,u))
+
     return all_items
+
 
 def iso_year_week(dt: datetime):
     # ISO-vecka (svensk praxis)
