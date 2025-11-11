@@ -5,6 +5,8 @@ import os, re, json, time, html
 from datetime import datetime, timezone
 from urllib.parse import urljoin, urlencode
 import requests
+requests.adapters.DEFAULT_RETRIES = 2
+REQUEST_TIMEOUT = 10
 from bs4 import BeautifulSoup
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -49,7 +51,7 @@ def save_history(hist):
 def fetch_page(page_index:int):
     params = {"text": QUERY, "pindex": page_index, "psize": PAGE_SIZE}
     url = f"{BASE}?{urlencode(params)}"
-    r = requests.get(url, headers=HEADERS, timeout=30)
+    r = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
     r.raise_for_status()
     return r.text, url
 
@@ -62,7 +64,7 @@ def looks_like_pdf(url: str) -> bool:
     if re.search(r"pdf($|[?#])", u):
         return True
     try:
-        h = requests.head(url, headers=HEADERS, allow_redirects=True, timeout=15)
+        h = requests.head(url, headers=HEADERS, allow_redirects=True, REQUEST_TIMEOUT)
         ct = (h.headers.get("Content-Type") or "").lower()
         if "application/pdf" in ct:
             return True
@@ -72,7 +74,7 @@ def looks_like_pdf(url: str) -> bool:
 
 def head_last_modified(url:str):
     try:
-        h = requests.head(url, headers=HEADERS, allow_redirects=True, timeout=20)
+        h = requests.head(url, headers=HEADERS, allow_redirects=True, REQUEST_TIMEOUT)
         lm = h.headers.get("Last-Modified")
         if not lm:
             return None
@@ -187,7 +189,7 @@ def extract_attachments_from_agenda(url:str):
     """
     out = []
     try:
-        r = requests.get(url, headers=HEADERS, timeout=30, allow_redirects=True)
+        r = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT, allow_redirects=True)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
 
@@ -347,11 +349,16 @@ footer{max-width:980px;margin:32px auto 48px auto;padding:0 16px;color:#475569;f
 
 def main():
     ensure_dirs()
+    logging.info("Laddar tidigare historik...")
     hist = load_history()
     known_urls = {it["url"] for it in hist["items"]}
 
+    logging.info("Startar insamling av alla träffar...")
     all_now = collect_all()
+    logging.info(f"Totalt {len(all_now)} träffar hittade.")
+
     new = [(t,u,s) for (t,u,s) in all_now if u not in known_urls]
+    logging.info(f"Nya länkar denna körning: {len(new)}")
 
     now_iso = datetime.now(timezone.utc).astimezone().isoformat(timespec="minutes")
     for (title,url,source) in new:
@@ -365,11 +372,10 @@ def main():
         })
 
     save_history(hist)
+    logging.info("Bygger HTML-sida...")
     build_site(hist)
+    logging.info("Klar. Genererat docs/index.html")
 
-    print(f"Upptäckta nya länkar denna körning: {len(new)}")
-    print(f"Totalt i historik: {len(hist['items'])}")
-    print(f"Genererat {INDEX_HTML}")
 
 if __name__ == "__main__":
     main()
