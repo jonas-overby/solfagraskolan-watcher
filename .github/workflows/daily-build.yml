@@ -1,0 +1,33 @@
+name: Daily scrape & build site
+
+on:
+  schedule:
+    # Kör 05:05 UTC dagligen (~06:05 svensk vintertid / ~07:05 sommartid)
+    - cron: "5 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # krävs för commit/push till repo
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install -r requirements.txt
+
+      - name: Run scraper & build
+        run: python scrape_and_build.py
+
+      - name: Commit generated site + history
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/ data/history.json
+          git commit -m "chore: daily build site" || echo "No changes to commit"
+          git push
