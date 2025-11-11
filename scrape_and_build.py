@@ -6,6 +6,9 @@ from datetime import datetime, timezone
 from urllib.parse import urljoin, urlencode
 import requests
 from bs4 import BeautifulSoup
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
 
 # --------- Konfiguration ----------
 BASE = "https://sammantraden.huddinge.se/search"
