@@ -64,7 +64,7 @@ def looks_like_pdf(url: str) -> bool:
     if re.search(r"pdf($|[?#])", u):
         return True
     try:
-        h = requests.head(url, headers=HEADERS, allow_redirects=True, REQUEST_TIMEOUT)
+        h = requests.head(url, headers=HEADERS, allow_redirects=True, timeout=REQUEST_TIMEOUT)
         ct = (h.headers.get("Content-Type") or "").lower()
         if "application/pdf" in ct:
             return True
@@ -74,7 +74,7 @@ def looks_like_pdf(url: str) -> bool:
 
 def head_last_modified(url:str):
     try:
-        h = requests.head(url, headers=HEADERS, allow_redirects=True, REQUEST_TIMEOUT)
+        h = requests.head(url, headers=HEADERS, allow_redirects=True, timeout=REQUEST_TIMEOUT)
         lm = h.headers.get("Last-Modified")
         if not lm:
             return None
