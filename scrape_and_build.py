@@ -70,48 +70,82 @@ def fetch_page(page_index:int):
     r.raise_for_status()
     return r.text, url
 
-def parse_links(html_text:str, page_url:str):
+def parse_links(html_text: str, page_url: str):
     """
-    Plockar direkta träffar + kandidat-mötessidor från sökresultatet
-    baserat på div.resultitem:
-      - Länk (<a>) vars text innehåller "Solfagraskolan" => direct
-      - Datum i samma block (<span class="date">) => document_date
-      - Mötesside-länkar (~/committees, /agenda, /namnder-styrelser, /welcome-) sparas i agenda_candidates
-        tillsammans med det datum som visas i resultatblocket.
-    Returnerar:
-      direct_items: [(title, url, document_date, "direct")]
-      agenda_candidates: [(agenda_url, document_date)]
+    Robustare sök:
+      - Ta med länkar där länktexten ELLER blocket runt länken innehåller 'Solfagraskolan'
+      - Hitta datum via regex YYYY-MM-DD i blockets text
+      - Returnera:
+          direct_items: [(title, url, document_date, "direct")]
+          agenda_candidates: [(agenda_url, document_date)]
     """
     soup = BeautifulSoup(html_text, "html.parser")
+
+    def abs_href(href: str) -> str:
+        if href.startswith("//"):
+            return "https:" + href
+        if href.startswith("/"):
+            return urljoin(page_url, href)
+        if not href.startswith("http"):
+            return urljoin(page_url, href)
+        return href
+
+    def block_text_from(a_tag, levels=3) -> str:
+        txt = (a_tag.get_text(" ", strip=True) or "")
+        p = a_tag.parent
+        for _ in range(levels):
+            if not p:
+                break
+            t = p.get_text(" ", strip=True) or ""
+            if t:
+                txt = t
+            p = p.parent
+        return " ".join(txt.split())
+
+    def pick_date(text: str) -> str | None:
+        # fånga YYYY-MM-DD även med olika unicode-bindestreck
+        text = text.replace("–", "-").replace("—", "-").replace("\u2212", "-")
+        m = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", text)
+        return m.group(1) if m else None
+
     direct_items = []
     agenda_candidates = []
 
-    for item in soup.select("div.resultitem"):
-        a = item.select_one("a[href]")
-        if not a:
+    seen_urls = set()
+
+    for a in soup.select("a[href]"):
+        href_raw = (a.get("href") or "").strip()
+        if not href_raw:
             continue
+        href = abs_href(href_raw)
+
+        # hoppa pagineringslänkar
+        if href.startswith(BASE) and "pindex=" in href and "psize=" in href:
+            continue
+
         title = (a.get_text(" ", strip=True) or "").strip()
-        href = _abs_href((a.get("href") or "").strip(), page_url)
-        # datum i samma block
-        date_el = item.select_one(".date")
-        doc_date = date_el.get_text(strip=True) if date_el else None
+        title_l = title.lower()
 
-        if "solfagraskolan" in title.lower():
-            direct_items.append((title, href, doc_date, "direct"))
+        blk_text = block_text_from(a, levels=3)
+        blk_l = blk_text.lower()
 
-        # markera mötessidor att följa (ej pdf)
+        if "solfagraskolan" not in title_l and "solfagraskolan" not in blk_l:
+            continue
+
+        doc_date = pick_date(blk_text)
+
+        # Direkta träffar: ta alltid med
+        if href not in seen_urls:
+            direct_items.append((title or "Dokument", href, doc_date, "direct"))
+            seen_urls.add(href)
+
+        # Kandidat: mötessida att följa (ej pdf)
         if any(seg in href for seg in ["/committees/", "/agenda", "/namnder-styrelser/", "/welcome-"]) and not _looks_like_pdf(href):
-            # även om a-texten inte hade Solfagraskolan kan blocket vara relevant
-            block_txt = (item.get_text(" ", strip=True) or "").lower()
-            if "solfagraskolan" in block_txt:
+            if href not in seen_urls:
                 agenda_candidates.append((href, doc_date))
+                seen_urls.add(href)
 
-    # dedup
-    seen = set()
-    direct_items = [(t,u,d,s) for (t,u,d,s) in direct_items if not (u in seen or seen.add(u))]
-    agenda_candidates = [(u,d) for (u,d) in agenda_candidates if not (u in seen or seen.add(u))]
     return direct_items, agenda_candidates
-
 def try_parse_date(s: str):
     """Tolka 2025-11-26, 26/11/2025 etc. Fallback: plocka YYYY-MM-DD via regex."""
     if not s:
