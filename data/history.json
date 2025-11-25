@@ -1217,6 +1217,34 @@
       "detected_at": "2025-11-15T05:26+00:00",
       "document_date": "2024-02-09",
       "source": "direct"
+    },
+    {
+      "url": "https://sammantraden.huddinge.se/welcome-sv/namnder-styrelser/kommunstyrelsen/kommunstyrelsen/agenda/tjansteutlatande-ks-genomforandebeslut-solfagraskolan-inkl-spelplan-och-idrottshallpdf-12429",
+      "title": "Tjänsteutlåtande KS genomförandebeslut Solfagraskolan inkl. spelplan och idrottshall.pdf",
+      "detected_at": "2025-11-25T05:29+00:00",
+      "document_date": "2024-03-19",
+      "source": "direct"
+    },
+    {
+      "url": "https://sammantraden.huddinge.se/welcome-sv/namnder-styrelser/kommunstyrelsen/kommunstyrelsen/agenda/bilaga-1-offert-beslutsunderlag-nya-solfagraskolan-inkl-spelplan-och-idrottshallpdf-86136",
+      "title": "Bilaga 1. Offert beslutsunderlag Nya Solfagraskolan inkl. spelplan och idrottshall.pdf",
+      "detected_at": "2025-11-25T05:29+00:00",
+      "document_date": "2024-03-19",
+      "source": "direct"
+    },
+    {
+      "url": "https://sammantraden.huddinge.se/welcome-sv/namnder-styrelser/kommunstyrelsen/kommunstyrelsen/agenda/bilaga-2-systemhandlingsritningarpdf-60127",
+      "title": "Bilaga 2 Systemhandlingsritningar.pdf",
+      "detected_at": "2025-11-25T05:29+00:00",
+      "document_date": "2024-03-19",
+      "source": "direct"
+    },
+    {
+      "url": "https://sammantraden.huddinge.se/welcome-sv/namnder-styrelser/kommunstyrelsen/kommunstyrelsen/agenda/protokollsutdrag-ks-au-2025-11-19-ss-6pdf",
+      "title": "Protokollsutdrag KS AU 2025-11-19 § 6.pdf",
+      "detected_at": "2025-11-25T05:29+00:00",
+      "document_date": "2024-02-13",
+      "source": "direct"
     }
   ]
 }
