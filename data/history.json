@@ -1406,6 +1406,27 @@
       "detected_at": "2026-02-05T06:03+00:00",
       "document_date": "2022-06-29",
       "source": "direct"
+    },
+    {
+      "url": "https://sammantraden.huddinge.se/welcome-sv/namnder-styrelser/grundskolenamndens-arbetsutskott/grundskolenamndens-arbetsutskott/agenda/protokollsutdrag-kf-2025-12-08-ss-14pdf",
+      "title": "Protokollsutdrag KF 2025-12-08 § 14.pdf",
+      "detected_at": "2026-02-10T06:14+00:00",
+      "document_date": "2024-04-22",
+      "source": "direct"
+    },
+    {
+      "url": "https://sammantraden.huddinge.se/welcome-sv/namnder-styrelser/grundskolenamndens-arbetsutskott/grundskolenamndens-arbetsutskott/agenda/tjansteutlatandepdf-51140",
+      "title": "Tjänsteutlåtande.pdf",
+      "detected_at": "2026-02-10T06:14+00:00",
+      "document_date": "2024-04-22",
+      "source": "direct"
+    },
+    {
+      "url": "https://sammantraden.huddinge.se/welcome-sv/namnder-styrelser/forskolenamndens-arbetsutskott/forskolenamndens-arbetsutskott/agenda/tjansteutlatandepdf-17123",
+      "title": "Tjänsteutlåtande.pdf",
+      "detected_at": "2026-02-10T06:14+00:00",
+      "document_date": "2025-03-24",
+      "source": "direct"
     }
   ]
 }
