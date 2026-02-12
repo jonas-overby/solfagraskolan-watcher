@@ -1427,6 +1427,34 @@
       "detected_at": "2026-02-10T06:14+00:00",
       "document_date": "2025-03-24",
       "source": "direct"
+    },
+    {
+      "url": "https://sammantraden.huddinge.se/welcome-sv/namnder-styrelser/forskolenamnden/forskolenamnden/agenda/protokollsutdrag-kf-2025-12-08-ss-14pdf",
+      "title": "Protokollsutdrag KF 2025-12-08 § 14.pdf",
+      "detected_at": "2026-02-12T06:09+00:00",
+      "document_date": "2024-04-22",
+      "source": "direct"
+    },
+    {
+      "url": "https://sammantraden.huddinge.se/welcome-sv/namnder-styrelser/grundskolenamnden/grundskolenamnden/agenda/protokollsutdrag-kf-2025-12-08-ss-14pdf",
+      "title": "Protokollsutdrag KF 2025-12-08 § 14.pdf",
+      "detected_at": "2026-02-12T06:09+00:00",
+      "document_date": "2024-04-22",
+      "source": "direct"
+    },
+    {
+      "url": "https://sammantraden.huddinge.se/welcome-sv/namnder-styrelser/grundskolenamnden/grundskolenamnden/agenda/tjansteutlatandepdf-21096",
+      "title": "Tjänsteutlåtande.pdf",
+      "detected_at": "2026-02-12T06:09+00:00",
+      "document_date": "2024-04-22",
+      "source": "direct"
+    },
+    {
+      "url": "https://sammantraden.huddinge.se/welcome-sv/namnder-styrelser/forskolenamnden/forskolenamnden/agenda/tjansteutlatandepdf-79423",
+      "title": "Tjänsteutlåtande.pdf",
+      "detected_at": "2026-02-12T06:09+00:00",
+      "document_date": "2021-08-31",
+      "source": "direct"
     }
   ]
 }
